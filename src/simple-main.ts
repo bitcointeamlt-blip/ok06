@@ -757,15 +757,22 @@ async function enterLobby(): Promise<void> {
 
   // Check if Colyseus endpoint is configured
   // IMPORTANT: Vite replaces import.meta.env.VITE_* at build time
-  const colyseusEndpoint = import.meta.env.VITE_COLYSEUS_ENDPOINT;
+  // For local development, use default ws://localhost:2567
+  // For production (Netlify), require VITE_COLYSEUS_ENDPOINT
+  const colyseusEndpoint = import.meta.env.VITE_COLYSEUS_ENDPOINT || 'ws://localhost:2567';
+  
+  // Check if we're in production (Netlify) - if so, require VITE_COLYSEUS_ENDPOINT
+  const isProduction = import.meta.env.PROD || window.location.hostname !== 'localhost';
   
   console.log('🔍 Environment check in enterLobby:', {
     hasEnv: !!import.meta.env.VITE_COLYSEUS_ENDPOINT,
     endpoint: colyseusEndpoint ? colyseusEndpoint.substring(0, 30) + '...' : 'not set',
+    isProduction: isProduction,
     allEnvKeys: Object.keys(import.meta.env).filter(k => k.startsWith('VITE_'))
   });
   
-  if (!colyseusEndpoint) {
+  // Only require VITE_COLYSEUS_ENDPOINT in production (Netlify)
+  if (isProduction && !import.meta.env.VITE_COLYSEUS_ENDPOINT) {
     walletError = 'Colyseus not configured. Set VITE_COLYSEUS_ENDPOINT in Netlify Environment Variables (Site Settings → Environment Variables)';
     console.error('❌ Cannot enter lobby: Colyseus endpoint not configured');
     console.error('💡 For Netlify: Go to Site Settings → Environment Variables → Add VITE_COLYSEUS_ENDPOINT');
@@ -774,7 +781,7 @@ async function enterLobby(): Promise<void> {
     return;
   }
   
-  console.log('🔵 Colyseus endpoint configured:', colyseusEndpoint.substring(0, 30) + '...');
+  console.log('🔵 Colyseus endpoint:', colyseusEndpoint.substring(0, 30) + '...');
 
   const myAddress = walletState.address;
   isInLobby = true;
