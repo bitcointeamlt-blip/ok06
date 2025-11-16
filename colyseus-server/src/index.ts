@@ -106,23 +106,49 @@ matchMaker.controller.getCorsHeaders = function(req: any) {
   };
 };
 
-// Register room
-gameServer.define("pvp_room", GameRoom);
+// Register room with error handling
+try {
+  gameServer.define("pvp_room", GameRoom);
+  console.log('✅ GameRoom "pvp_room" registered successfully');
+} catch (error: any) {
+  console.error('❌ Failed to register GameRoom:', error);
+  console.error('Error name:', error?.name);
+  console.error('Error message:', error?.message);
+  console.error('Error stack:', error?.stack);
+  // Don't exit - let server start and log the error
+}
 
 // Get PORT from environment - Colyseus Cloud sets this automatically
 // CRITICAL: Colyseus Cloud nustato PORT per environment variable
 // NEGALIME keisti porto, nes Colyseus Cloud routing neveiks!
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 2567;
 
-// Error handling
+// Error handling - CRITICAL: Log errors but don't exit immediately
+// This allows PM2 to handle restarts properly
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  process.exit(1);
+  console.error('❌ Uncaught Exception:', error);
+  console.error('Error name:', error.name);
+  console.error('Error message:', error.message);
+  console.error('Error stack:', error.stack);
+  console.error('💡 Process will exit in 10 seconds to allow PM2 to handle restart...');
+  
+  // Give PM2 time to detect the error and restart
+  setTimeout(() => {
+    console.error('💡 Exiting due to uncaught exception...');
+    process.exit(1);
+  }, 10000);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection:', reason);
-  process.exit(1);
+  console.error('❌ Unhandled Rejection:', reason);
+  console.error('Promise:', promise);
+  console.error('💡 Process will exit in 10 seconds to allow PM2 to handle restart...');
+  
+  // Give PM2 time to detect the error and restart
+  setTimeout(() => {
+    console.error('💡 Exiting due to unhandled rejection...');
+    process.exit(1);
+  }, 10000);
 });
 
 // CRITICAL: Start Colyseus server using gameServer.listen()
@@ -135,8 +161,18 @@ gameServer.listen(PORT, '0.0.0.0')
     console.log(`✅ Server listening on 0.0.0.0:${PORT}`);
     console.log(`✅ HTTP server is ready`);
     console.log(`✅ WebSocket transport is ready`);
+    console.log(`✅ Health endpoint available at http://0.0.0.0:${PORT}/health`);
+    console.log(`✅ Matchmaking endpoint available at http://0.0.0.0:${PORT}/matchmake`);
+    
+    // Keep process alive - don't exit
+    // Server should run indefinitely
   })
   .catch((err: any) => {
+    console.error('❌ CRITICAL ERROR during server start:');
+    console.error('Error code:', err.code);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    
     if (err.code === 'EADDRINUSE') {
       console.error(`❌ Port ${PORT} is already in use`);
       console.error('💡 This usually means PM2 is trying to start multiple instances');
@@ -144,10 +180,12 @@ gameServer.listen(PORT, '0.0.0.0')
       console.error('💡 PM2 will restart with delay configured in ecosystem.config.js');
       console.error('💡 CRITICAL: Cannot change port - Colyseus Cloud expects server on PORT!');
       setTimeout(() => {
+        console.error('💡 Exiting due to EADDRINUSE...');
         process.exit(1);
       }, 5000);
     } else {
       console.error('❌ Failed to start Colyseus server:', err);
+      console.error('💡 Exiting due to startup error...');
       process.exit(1);
     }
   });
