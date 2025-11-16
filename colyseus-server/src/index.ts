@@ -7,35 +7,7 @@ import cors from "cors";
 
 const app = express();
 
-// CRITICAL: Handle CORS BEFORE any other middleware
-// This ensures CORS headers are sent for ALL requests, including preflight OPTIONS
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Allow all origins (including Netlify)
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  res.setHeader('Vary', 'Origin');
-  
-  // Handle preflight OPTIONS requests immediately
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-  
-  next();
-});
-
-// CORS middleware as backup
+// CRITICAL: CORS middleware FIRST - before any routes
 app.use(cors({
   origin: true, // Allow all origins
   credentials: true,
@@ -53,10 +25,11 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Create HTTP server
+// Create HTTP server with Express app
 const server = createServer(app);
 
 // Create Colyseus server with WebSocketTransport
+// Pass the HTTP server to WebSocketTransport
 const gameServer = new Server({
   transport: new WebSocketTransport({
     server: server,
@@ -64,14 +37,9 @@ const gameServer = new Server({
 });
 
 // CRITICAL: Override Colyseus matchmaking CORS headers
-// This ensures matchmaking endpoints (/matchmake/*) have CORS headers
-// IMPORTANT: This must be set BEFORE gameServer.define()
 matchMaker.controller.getCorsHeaders = function(req: any) {
   const origin = req.headers.origin;
-  
-  console.log('🔵 Colyseus CORS headers requested for origin:', origin);
-  
-  const headers: any = {
+  return {
     'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
@@ -80,10 +48,6 @@ matchMaker.controller.getCorsHeaders = function(req: any) {
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
-  
-  console.log('🔵 Colyseus CORS headers:', headers);
-  
-  return headers;
 };
 
 // Register room
@@ -103,11 +67,14 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Start HTTP server - Colyseus is already attached via WebSocketTransport
+// Start HTTP server - Colyseus will handle WebSocket connections automatically
+// CRITICAL: Use server.listen(), NOT gameServer.listen() when using WebSocketTransport({ server: server })
 server.on('error', (err: any) => {
   console.error('Server error:', err);
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
+    console.error(`❌ Port ${PORT} is already in use`);
+    // Exit immediately - PM2 will restart
+    process.exit(1);
   }
   process.exit(1);
 });
