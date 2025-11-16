@@ -7,6 +7,40 @@ import cors from "cors";
 
 const app = express();
 
+// CRITICAL: Handle CORS for /matchmake routes FIRST (before anything else)
+// This MUST be before Colyseus server creation to ensure CORS headers are set
+app.use('/matchmake', (req, res, next) => {
+  const origin = req.headers.origin;
+  
+  console.log('🔴 Matchmake route handler - Origin:', origin);
+  console.log('🔴 Matchmake route handler - Method:', req.method);
+  console.log('🔴 Matchmake route handler - Path:', req.path);
+  
+  // Set CORS headers
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Vary', 'Origin');
+  
+  // Handle preflight OPTIONS requests immediately
+  if (req.method === 'OPTIONS') {
+    console.log('🔴 Matchmake OPTIONS request - sending 204');
+    res.status(204).end();
+    return;
+  }
+  
+  console.log('🔴 Matchmake route handler - calling next()');
+  next();
+});
+
 // CRITICAL: Handle CORS BEFORE any other middleware
 // This ensures CORS headers are sent for ALL requests, including preflight OPTIONS
 app.use((req, res, next) => {
@@ -88,28 +122,6 @@ matchMaker.controller.getCorsHeaders = function(req: any) {
   
   return headers;
 };
-
-// CRITICAL: Also handle CORS for matchmaking routes directly
-app.use('/matchmake', (req, res, next) => {
-  const origin = req.headers.origin;
-  
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-  
-  next();
-});
 
 // Register room
 gameServer.define("pvp_room", GameRoom);
