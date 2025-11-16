@@ -7,40 +7,6 @@ import cors from "cors";
 
 const app = express();
 
-// CRITICAL: Handle CORS for /matchmake routes FIRST (before anything else)
-// This MUST be before Colyseus server creation to ensure CORS headers are set
-app.use('/matchmake', (req, res, next) => {
-  const origin = req.headers.origin;
-  
-  console.log('🔴 Matchmake route handler - Origin:', origin);
-  console.log('🔴 Matchmake route handler - Method:', req.method);
-  console.log('🔴 Matchmake route handler - Path:', req.path);
-  
-  // Set CORS headers
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  res.setHeader('Vary', 'Origin');
-  
-  // Handle preflight OPTIONS requests immediately
-  if (req.method === 'OPTIONS') {
-    console.log('🔴 Matchmake OPTIONS request - sending 204');
-    res.status(204).end();
-    return;
-  }
-  
-  console.log('🔴 Matchmake route handler - calling next()');
-  next();
-});
-
 // CRITICAL: Handle CORS BEFORE any other middleware
 // This ensures CORS headers are sent for ALL requests, including preflight OPTIONS
 app.use((req, res, next) => {
@@ -87,41 +53,6 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// CRITICAL: Explicit route handler for ALL /matchmake/* routes
-// This MUST be before Colyseus server creation to ensure CORS headers are set
-app.all('/matchmake/*', (req, res, next) => {
-  const origin = req.headers.origin;
-  
-  console.log('🟢 ALL /matchmake/* handler - Origin:', origin);
-  console.log('🟢 ALL /matchmake/* handler - Method:', req.method);
-  console.log('🟢 ALL /matchmake/* handler - Path:', req.path);
-  console.log('🟢 ALL /matchmake/* handler - URL:', req.url);
-  
-  // Set CORS headers FIRST
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  res.setHeader('Vary', 'Origin');
-  
-  // Handle preflight OPTIONS requests immediately
-  if (req.method === 'OPTIONS') {
-    console.log('🟢 ALL /matchmake/* OPTIONS request - sending 204');
-    res.status(204).end();
-    return;
-  }
-  
-  console.log('🟢 ALL /matchmake/* handler - calling next()');
-  next();
-});
-
 // Create HTTP server
 const server = createServer(app);
 
@@ -140,11 +71,8 @@ matchMaker.controller.getCorsHeaders = function(req: any) {
   
   console.log('🔵 Colyseus CORS headers requested for origin:', origin);
   
-  // Allow all origins, especially Netlify
-  const allowedOrigin = origin || '*';
-  
   const headers: any = {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
     'Access-Control-Allow-Credentials': 'true',
@@ -179,20 +107,11 @@ process.on('unhandledRejection', (reason, promise) => {
 server.on('error', (err: any) => {
   console.error('Server error:', err);
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} is already in use`);
-    console.error('💡 This usually means PM2 is trying to start multiple instances');
-    console.error('💡 Waiting 5 seconds before exit to allow PM2 to clean up...');
-    // Wait 5 seconds before exit to allow PM2 to clean up
-    setTimeout(() => {
-      process.exit(1);
-    }, 5000);
-    return;
+    console.error(`Port ${PORT} is already in use`);
   }
   process.exit(1);
 });
 
-// CRITICAL: Use SO_REUSEADDR to allow port reuse (helps with PM2 restarts)
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`✅ Server listening on 0.0.0.0:${PORT}`);
 });
