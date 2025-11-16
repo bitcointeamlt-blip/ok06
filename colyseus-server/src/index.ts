@@ -97,28 +97,29 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// CRITICAL: Error handler for EADDRINUSE
-// Jei portas užimtas - exit ir leisti PM2 restart'inti su delay
-// NEGALIME keisti porto, nes Colyseus Cloud tikisi, kad serveris veiks ant PORT!
-server.on('error', (err: any) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} is already in use`);
-    console.error('💡 This usually means PM2 is trying to start multiple instances');
-    console.error('💡 Waiting 5 seconds before exit to allow PM2 cleanup...');
-    console.error('💡 PM2 will restart with delay configured in ecosystem.config.js');
-    console.error('💡 CRITICAL: Cannot change port - Colyseus Cloud expects server on PORT!');
-    setTimeout(() => {
+// CRITICAL: Start Colyseus server using gameServer.listen()
+// This is the official Colyseus way when using WebSocketTransport({ server })
+// gameServer.listen() will call transport.listen(), which calls server.listen()
+// Error handling is done through gameServer.listen() promise
+gameServer.listen(PORT, '0.0.0.0')
+  .then(() => {
+    console.log(`✅ Colyseus server is running on port ${PORT}`);
+    console.log(`✅ Server listening on 0.0.0.0:${PORT}`);
+    console.log(`✅ HTTP server is ready`);
+    console.log(`✅ WebSocket transport is ready`);
+  })
+  .catch((err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use`);
+      console.error('💡 This usually means PM2 is trying to start multiple instances');
+      console.error('💡 Waiting 5 seconds before exit to allow PM2 cleanup...');
+      console.error('💡 PM2 will restart with delay configured in ecosystem.config.js');
+      console.error('💡 CRITICAL: Cannot change port - Colyseus Cloud expects server on PORT!');
+      setTimeout(() => {
+        process.exit(1);
+      }, 5000);
+    } else {
+      console.error('❌ Failed to start Colyseus server:', err);
       process.exit(1);
-    }, 5000);
-  } else {
-    console.error('Server error:', err);
-    process.exit(1);
-  }
-});
-
-// Start HTTP server - Colyseus will handle WebSocket connections automatically
-// CRITICAL: Must use PORT from environment - Colyseus Cloud routing depends on it!
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`✅ Server listening on 0.0.0.0:${PORT}`);
-});
+    }
+  });
