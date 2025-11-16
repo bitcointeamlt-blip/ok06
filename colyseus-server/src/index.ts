@@ -71,8 +71,11 @@ matchMaker.controller.getCorsHeaders = function(req: any) {
   
   console.log('🔵 Colyseus CORS headers requested for origin:', origin);
   
+  // Allow all origins, especially Netlify
+  const allowedOrigin = origin || '*';
+  
   const headers: any = {
-    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
     'Access-Control-Allow-Credentials': 'true',
@@ -85,6 +88,28 @@ matchMaker.controller.getCorsHeaders = function(req: any) {
   
   return headers;
 };
+
+// CRITICAL: Also handle CORS for matchmaking routes directly
+app.use('/matchmake', (req, res, next) => {
+  const origin = req.headers.origin;
+  
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  
+  next();
+});
 
 // Register room
 gameServer.define("pvp_room", GameRoom);
