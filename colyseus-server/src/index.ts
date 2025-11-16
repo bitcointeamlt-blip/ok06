@@ -7,12 +7,40 @@ import cors from "cors";
 
 const app = express();
 
-// CRITICAL: Handle /matchmake routes FIRST - before Colyseus server creation
-// This ensures CORS headers are set BEFORE Colyseus processes the request
+// CRITICAL: CORS middleware for ALL routes FIRST - before anything else
+// This MUST be the first middleware to ensure CORS headers are set for ALL requests
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers for ALL requests
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Vary', 'Origin');
+  
+  // Handle preflight OPTIONS requests immediately - BEFORE Colyseus processes them
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  
+  next();
+});
+
+// CRITICAL: Explicit /matchmake route handler as backup
+// This ensures /matchmake routes get CORS headers even if Colyseus bypasses Express
 app.use('/matchmake', (req, res, next) => {
   const origin = req.headers.origin;
   
-  // Set CORS headers
+  // Set CORS headers again (backup)
   if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
@@ -35,7 +63,7 @@ app.use('/matchmake', (req, res, next) => {
   next();
 });
 
-// CRITICAL: CORS middleware for all other routes
+// CORS package middleware as additional backup
 app.use(cors({
   origin: true, // Allow all origins
   credentials: true,

@@ -1,227 +1,173 @@
-# 🚀 GitHub Commit Instrukcijos - Paruoštas Kodas
+# 📋 GitHub Commit Instrukcijos
 
-## ✅ Paruošti Failai Commit'ui
+## 🎯 Kaip Commit'inti Paruoštą Kodą
 
-### 1. `colyseus-server/ecosystem.config.js`
-**Kas pakeista:**
-- Pridėta PM2 konfigūracija su `kill_timeout`, `restart_delay`, `min_uptime`, `max_restarts`
-- Tai išspręs `EADDRINUSE` problemą Colyseus Cloud
-
-### 2. `colyseus-server/src/index.ts`
-**Kas pakeista:**
-- Pakeista `server.listen(PORT, '0.0.0.0', ...)` - aiškiai nustatytas bind address
-- Pagerinta error handling su `EADDRINUSE` - laukti 5 sekundes prieš exit
-- Pridėti debug log'ai
-
-### 3. `src/simple-main.ts`
-**Kas pakeista:**
-- Lokaliai naudoja default `ws://localhost:2567`
-- Production (Netlify) reikalauja `VITE_COLYSEUS_ENDPOINT`
-
-### 4. `src/services/ColyseusService.ts`
-**Kas pakeista:**
-- Grąžinta į originalią versiją (veikia teisingai)
+Aš negaliu tiesiogiai commit'inti į GitHub be jūsų autentifikacijos, bet galiu paruošti viską commit'ui.
 
 ---
 
-## 📋 Commit Žingsniai
+## ✅ Būdas 1: PowerShell Script (Jei Git įdiegtas)
 
-### Step 1: Atidarykite Terminal (PowerShell arba Command Prompt)
+### 1. Paleiskite Script'ą
 
-**Windows PowerShell:**
 ```powershell
-cd C:\Users\p3p3l\Downloads\pvp03-new
+.\commit-to-github.ps1
 ```
 
-**ARBA naudokite GitHub Desktop arba Visual Studio Code Git funkcijas**
+Script'as automatiškai:
+- ✅ Patikrina Git konfigūraciją
+- ✅ Prideda visus failus
+- ✅ Commit'ina su žinute
+- ✅ Push'ina į GitHub
 
 ---
 
-### Step 2: Patikrinkite, Kokie Failai Pakeisti
+## ✅ Būdas 2: GitHub Desktop (REKOMENDUOJAMA)
 
-**Jei naudojate Git komandų eilutę:**
-```bash
-git status
-```
+### 1. Įdiekite GitHub Desktop
 
-**Turėtumėte matyti:**
-```
-modified:   colyseus-server/ecosystem.config.js
-modified:   colyseus-server/src/index.ts
-modified:   src/simple-main.ts
-modified:   src/services/ColyseusService.ts
-```
+Atsisiųskite iš: https://desktop.github.com/
+
+### 2. Prisijunkite prie GitHub
+
+- Atidarykite GitHub Desktop
+- Prisijunkite su savo GitHub account'u
+- Pasirinkite repository `ok06`
+
+### 3. Commit'inkite
+
+1. GitHub Desktop automatiškai parodys visus pakeitimus
+2. Matysite:
+   - `colyseus-server/src/index.ts` - pakeistas CORS kodas
+   - `colyseus-server/build/index.js` - kompiliuotas kodas
+   - Kiti failai
+
+3. **Summary** laukelyje įrašykite:
+   ```
+   Fix: Colyseus CORS - HTTP server request listener for matchmaking endpoints
+   ```
+
+4. Spustelėkite **"Commit to main"**
+
+5. Spustelėkite **"Push origin"** arba **"Push"** mygtuką
 
 ---
 
-### Step 3: Pridėkite Failus į Staging Area
+## ✅ Būdas 3: VS Code Git Integracija
 
-```bash
-git add colyseus-server/ecosystem.config.js
-git add colyseus-server/src/index.ts
-git add src/simple-main.ts
-git add src/services/ColyseusService.ts
+### 1. Atidarykite VS Code
+
+### 2. Eikite į Source Control (Ctrl+Shift+G)
+
+### 3. Matysite visus pakeitimus
+
+### 4. Commit'inkite:
+
+1. Spustelėkite **"+"** prie failų, kad pridėtumėte juos
+2. Įrašykite commit message:
+   ```
+   Fix: Colyseus CORS - HTTP server request listener for matchmaking endpoints
+   ```
+3. Spustelėkite **"✓ Commit"**
+4. Spustelėkite **"Sync Changes"** arba **"Push"**
+
+---
+
+## ✅ Būdas 4: Terminal Komandos (Jei Git įdiegtas)
+
+### 1. Patikrinkite Git konfigūraciją
+
+```powershell
+git config --get user.name
+git config --get user.email
 ```
 
-**ARBA pridėkite visus pakeistus failus:**
-```bash
+Jei nerasta, nustatykite:
+```powershell
+git config --global user.name "Jūsų Vardas"
+git config --global user.email "jūsų@email.com"
+```
+
+### 2. Patikrinkite Remote Repository
+
+```powershell
+git remote -v
+```
+
+Jei nerasta, pridėkite:
+```powershell
+git remote add origin https://github.com/jūsų-username/ok06.git
+```
+
+### 3. Commit'inkite
+
+```powershell
+# Pridėti visus failus
 git add .
-```
 
----
+# Commit'inti
+git commit -m "Fix: Colyseus CORS - HTTP server request listener for matchmaking endpoints"
 
-### Step 4: Commit'inkite Su Aiškiu Message
-
-```bash
-git commit -m "Fix EADDRINUSE and local development - prevent multiple PM2 instances and fix localhost endpoint"
-```
-
-**ARBA naudokite GitHub Desktop:**
-1. Atidarykite GitHub Desktop
-2. Matysite visus pakeistus failus
-3. Parašykite commit message:
-   ```
-   Fix EADDRINUSE and local development - prevent multiple PM2 instances and fix localhost endpoint
-   ```
-4. Spauskite "Commit to main"
-
----
-
-### Step 5: Push'inkite į GitHub
-
-**Jei naudojate Git komandų eilutę:**
-```bash
+# Push'inti į GitHub
 git push origin main
 ```
 
-**ARBA naudokite GitHub Desktop:**
-1. Spauskite "Push origin"
-2. Palaukite, kol kodas bus push'intas
+---
+
+## 📋 Kas Bus Commit'inta
+
+### Pakeisti Failai:
+
+1. **`colyseus-server/src/index.ts`**
+   - Pridėtas HTTP server `request` event listener
+   - CORS headers nustatomi prieš Colyseus apdoroja request'us
+   - OPTIONS request'ai apdorojami iš karto
+
+2. **`colyseus-server/build/index.js`**
+   - Kompiliuotas TypeScript kodas
+
+### Dokumentacijos Failai:
+
+- `TEISINGAS-COLYSEUS-START.md`
+- `GALUTINE-ANALIZE-IR-SPRENDIMAS.md`
+- `COLYSEUS-OFICIALUS-PAVYZDYS.md`
+- `PORTO-KEITIMAS-NEPADES.md`
+- Ir kiti...
 
 ---
 
-## ✅ Po Push - Kas Turėtų Atsitikti
+## 🚀 Po Commit'o
 
-### 1. Colyseus Cloud Automatiškai Deploy'ins
-
-**Po GitHub push:**
-- Colyseus Cloud automatiškai aptiks pakeitimus
-- Pradės naują deployment
-- Palaukite 2-5 min
-
-### 2. Netlify Automatiškai Deploy'ins
-
-**Po GitHub push:**
-- Netlify automatiškai aptiks pakeitimus
-- Pradės naują build
-- Palaukite 2-3 min
+1. **Colyseus Cloud** automatiškai gaus naują kodą iš GitHub
+2. **PM2** restart'ins serverį su nauju kodu
+3. **CORS problema** turėtų būti išspręsta
 
 ---
 
-## 🔍 Patikrinimas Po Deployment
+## ❓ Jei Kyla Problemų
 
-### Colyseus Cloud Logs
+### Git Nerastas
 
-**Eikite į Colyseus Cloud Dashboard:**
-1. https://cloud.colyseus.io
-2. Pasirinkite savo projektą
-3. Eikite į "Logs"
+**Sprendimas:** Įdiekite Git:
+- https://git-scm.com/download/win
+- Arba naudokite GitHub Desktop
 
-**Turėtumėte matyti:**
-```
-✅ Server running on port 2567
-✅ Server listening on 0.0.0.0:2567
-```
+### Remote Repository Nerastas
 
-**NETURĖTUMĖTE MATYTI:**
-```
-❌ Port 2567 is already in use
-Error: listen EADDRINUSE
-```
-
-### Netlify Build
-
-**Eikite į Netlify Dashboard:**
-1. https://app.netlify.com
-2. Pasirinkite savo site
-3. Eikite į "Deploys"
-
-**Turėtumėte matyti:**
-- ✅ Build successful
-- ✅ Site deployed
-
----
-
-## 📋 Checklist
-
-- [ ] Visi failai paruošti commit'ui
-- [ ] Failai pridėti į staging area (`git add`)
-- [ ] Commit padarytas su aiškiu message
-- [ ] Kodas push'intas į GitHub (`git push`)
-- [ ] Colyseus Cloud deployment padarytas (automatiškai)
-- [ ] Netlify deployment padarytas (automatiškai)
-- [ ] Colyseus Cloud logs nerodo `EADDRINUSE` error'ų
-- [ ] Serveris veikia (`/health` endpoint)
-- [ ] Frontend veikia (Netlify)
-
----
-
-## 💡 Svarbiausia
-
-**Commit Message:**
-```
-Fix EADDRINUSE and local development - prevent multiple PM2 instances and fix localhost endpoint
+**Sprendimas:** Pridėkite remote:
+```powershell
+git remote add origin https://github.com/jūsų-username/ok06.git
 ```
 
-**Kas Bus Išspręsta:**
-1. ✅ Colyseus Cloud `EADDRINUSE` problema (PM2 kelis instance'us)
-2. ✅ Lokalus veikimas (localhost:2567)
-3. ✅ Production veikimas (Netlify + Colyseus Cloud)
+### Push Nepavyko
+
+**Sprendimas:** Patikrinkite:
+- Ar turite teises push'inti
+- Ar naudojate teisingą branch'ą (main/master)
+- Ar turite interneto ryšį
 
 ---
 
-## 🚨 Jei Kažkas Neveikia
+## 💡 Rekomendacija
 
-### Problema: Git komandos neveikia
-
-**Sprendimas:**
-- Naudokite GitHub Desktop
-- ARBA Visual Studio Code Git funkcijas
-- ARBA įdiekite Git: https://git-scm.com/download/win
-
-### Problema: Colyseus Cloud vis tiek rodo EADDRINUSE
-
-**Sprendimas:**
-1. Patikrinkite, ar kodas buvo push'intas į GitHub
-2. Patikrinkite Colyseus Cloud Dashboard → Deployments
-3. Patikrinkite, ar paskutinis deployment turi naują versiją
-4. Palaukite 5-10 min (deployment gali užtrukti)
-
-### Problema: Netlify build neveikia
-
-**Sprendimas:**
-1. Patikrinkite Netlify Dashboard → Deploys
-2. Patikrinkite build logs - ar yra error'ų?
-3. Patikrinkite, ar `VITE_COLYSEUS_ENDPOINT` yra nustatytas Netlify Environment Variables
-
----
-
-## 📚 Susiję Failai
-
-- `colyseus-server/ecosystem.config.js` - PM2 konfigūracija
-- `colyseus-server/src/index.ts` - Serverio kodas
-- `src/simple-main.ts` - Frontend kodas
-- `src/services/ColyseusService.ts` - Colyseus service
-
----
-
-## 🎯 Galutinis Tikslas
-
-Po visų žingsnių:
-- ✅ Kodas push'intas į GitHub
-- ✅ Colyseus Cloud deployment padarytas
-- ✅ Netlify deployment padarytas
-- ✅ Colyseus Cloud serveris veikia (nėra EADDRINUSE)
-- ✅ Frontend veikia (Netlify)
-- ✅ Lokalus veikimas veikia (localhost:7000 + localhost:2567)
-
+**Naudokite GitHub Desktop** - tai lengviausias būdas commit'inti ir push'inti kodą!
