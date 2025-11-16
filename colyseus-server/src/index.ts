@@ -179,11 +179,20 @@ process.on('unhandledRejection', (reason, promise) => {
 server.on('error', (err: any) => {
   console.error('Server error:', err);
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
+    console.error(`❌ Port ${PORT} is already in use`);
+    console.error('💡 This usually means PM2 is trying to start multiple instances');
+    console.error('💡 Waiting 5 seconds before exit to allow PM2 to clean up...');
+    // Wait 5 seconds before exit to allow PM2 to clean up
+    setTimeout(() => {
+      process.exit(1);
+    }, 5000);
+    return;
   }
   process.exit(1);
 });
 
-server.listen(PORT, () => {
+// CRITICAL: Use SO_REUSEADDR to allow port reuse (helps with PM2 restarts)
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Server listening on 0.0.0.0:${PORT}`);
 });
